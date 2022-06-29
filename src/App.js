@@ -1,25 +1,34 @@
-import logo from './logo.svg';
+import React, { useRef, useState } from "react";
+import Particle from "./component/Particle";
 import './App.css';
 
-function App() {
+
+
+export default function App() {
+  const fileRef = useRef();
+
+  const handleChange = (e) => {
+    const [file] = e.target.files;
+    console.log(file);
+  };
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <>
+    <Particle/>
+    <div className="upload">
+      <h1 style={{color: "black"}} >Retinal image</h1>
+
+      <button onClick={() => fileRef.current.click()}>
+        Upload Image !!!
+      </button>
+      <input
+        ref={fileRef}
+        onChange={handleChange}
+        multiple={false}
+        type="file"
+        hidden
+      />
     </div>
+    </>
   );
 }
-
-export default App;
