@@ -1,13 +1,12 @@
 import React, { useRef, useState, useEffect, Fragment } from "react";
-import { loadLayersModel, browser } from "@tensorflow/tfjs";
-import ImageNetClass from './ImageNetClass';
+import { loadLayersModel, browser, squeeze } from "@tensorflow/tfjs";
 import Particle from "./component/Particle";
 import './App.css';
 
 export default function App() {
   const [model, setModel] = useState(null);
-  const [result, setResult] = useState(null);
   const fileRef = useRef();
+  const canvasRef = useRef();
 
   useEffect(() => {
     const loadModel = async () => {
@@ -20,7 +19,6 @@ export default function App() {
 
   const handleChange = (e) => {
     e.preventDefault();
-    setResult(null);
 
     if (e.target.files && e.target.files.length > 0) {
       var file = e.target.files[0];
@@ -36,35 +34,14 @@ export default function App() {
           .toFloat()
           .expandDims();
 
-        let predictions = await model.predict(tensor).data();
-        let top = 1;
-        let results = [];
-        for (let i = 0; i < 128; i++) {
-          let val = predictions.slice(i * 128, i * 128 + 128);
-          let top_index = Array.from(val)
-            .map((x, i) => {
-              return { index: i, value: x };
-            })
-            .sort((a, b) => b.value - a.value)
-            .slice(0, top)
+        let predictions = model.predict(tensor);
+        predictions =squeeze(predictions);
+        console.log(predictions.shape)
 
-          results = results.concat(top_index.map((x) => {
-            return { ...x, name: ImageNetClass[x.index] };
-          }).sort((a, b) => b.value - a.value));
-        }
-        results = results.reduce((acc, curr) => {
-          let name = curr['name'][1];
-          if (acc.hasOwnProperty(name)) {
-            acc[name] += 1;
-          } else {
-            acc[name] = 1;
-          }
-          return acc;
-        }, {});
-        results = Object.keys(results).map(function (key) {
-          return [key, results[key]];
-        }).sort((a, b) => b[1] - a[1]);
-        setResult(results[0]);
+        let canvas = canvasRef.current;
+        canvas.width = predictions.shape.width;
+        canvas.height = predictions.shape.height;
+        await browser.toPixels(predictions, canvas);
       }
       reader.readAsDataURL(file);
     }
@@ -78,6 +55,7 @@ export default function App() {
         <button onClick={() => fileRef.current.click()}>
           Upload Image !!!
         </button>
+        <div/>
         <input
           ref={fileRef}
           onChange={handleChange}
@@ -86,9 +64,9 @@ export default function App() {
           accept="image/x-png,image/gif,image/jpeg"
           hidden
         />
-        {result ?
-          <div style={{ fontSize: "32px" }}>Result: {result}</div>
-          : <></>}
+        <canvas
+          ref={canvasRef}
+        />
       </div>
     </Fragment>
   );
